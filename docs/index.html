@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>ameyaka — 傘を、忘れない。</title>
+<link rel="manifest" href="./manifest.webmanifest" />
+<meta name="theme-color" content="#2f6f7c" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-title" content="ameyaka" />
+<link rel="apple-touch-icon" href="./icons/icon-192.png" />
+<link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="mark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 3v1.5" /><path d="M3.5 12a8.5 8.5 0 0 1 17 0z" /><path d="M12 12v6.5a2 2 0 0 1-4 0" />
+        </svg>
+      </div>
+      <div>
+        <h1>ameyaka</h1>
+        <p>傘を、忘れない。</p>
+      </div>
+    </div>
+    <nav class="nav" id="nav"></nav>
+    <div class="sidebar-foot">
+      <div class="weather-chip">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round">
+          <path d="M7 16a4 4 0 0 1 .6-7.96 5.5 5.5 0 0 1 10.6 1.46A3.5 3.5 0 0 1 17.5 16z" />
+          <path d="M9 19l-.7 1.6M13 19l-.7 1.6M17 19l-.7 1.6" />
+        </svg>
+        <div>
+          <div class="l" id="chipPlace">今日の天気</div>
+          <div class="v" id="chipValue">取得中…</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+  <main class="main" id="main"></main>
+</div>
+<script src="./config.js"></script>
+<script src="./store.js"></script>
+<script src="./app.js"></script>
+</body>
+</html>

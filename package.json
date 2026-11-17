@@ -1,0 +1,16 @@
+{
+  "name": "ameyaka",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "keys": "node scripts/gen-keys.mjs",
+    "icons": "node scripts/make-icons.mjs",
+    "push": "node scripts/send.mjs",
+    "rain": "node scripts/rain-check.mjs",
+    "serve": "node scripts/serve.mjs"
+  },
+  "dependencies": {
+    "web-push": "^3.6.7"
+  }
+}

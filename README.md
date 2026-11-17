@@ -56,6 +56,16 @@
 - **実装**：OpenClaw と Claude Code による開発
 - **ハードウェア**：傘立てセンサー（ESP32など）を担当メンバーが製作（オンラインで分担）
 
+## 実装
+
+フェーズ1は実装済みで、このリポジトリに入っています。
+
+- 公開 URL: <https://yousan.github.io/Meeple-and-Koma/>
+- アプリ本体: `docs/`（素の HTML/CSS/JS、ビルド不要。GitHub Pages の公開元）
+- 配信スクリプト: `scripts/`、定時実行: `.github/workflows/rain.yml`
+
 ## ドキュメント
 
-- [仕様書（docs/spec.md）](docs/spec.md)
+- [仕様書（docs/spec.md）](docs/spec.md) — 画面・通知・IoT 連携の仕様
+- [技術仕様（TECH.md）](TECH.md) — 使用技術とその理由、開発体制、既知の弱点
+- [開発・運用手順（DEVELOPMENT.md）](DEVELOPMENT.md) — 鍵の発行、購読の登録、手動発火

@@ -1,0 +1,74 @@
+name: 雨チェックと通知
+
+on:
+  schedule:
+    # GitHub Actions の cron は UTC
+    - cron: "0 22 * * *"   # 翌 7:00 JST  出発前
+    - cron: "0 9 * * *"    #    18:00 JST 帰宅前
+  workflow_dispatch:
+    inputs:
+      slot:
+        description: "どの枠として送るか"
+        type: choice
+        options: [morning, evening]
+        default: morning
+      message:
+        description: "手動で送る本文（空なら天気を見て判定）"
+        required: false
+        default: ""
+      title:
+        description: "手動送信のタイトル"
+        required: false
+        default: "今日は傘が必要です"
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # 失効した購読を subscriptions.json から消して push し直すため
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci || npm install
+
+      - name: 枠を決める
+        id: slot
+        run: |
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            # 22:00 UTC の起動は朝、それ以外（9:00 UTC）は夕方
+            case "${{ github.event.schedule }}" in
+              "0 22 * * *") echo "slot=morning" >> "$GITHUB_OUTPUT" ;;
+              *)            echo "slot=evening" >> "$GITHUB_OUTPUT" ;;
+            esac
+          else
+            echo "slot=${{ github.event.inputs.slot || 'morning' }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: 送信
+        env:
+          VAPID_PUBLIC_KEY: ${{ vars.VAPID_PUBLIC_KEY }}
+          VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
+          VAPID_SUBJECT: ${{ vars.VAPID_SUBJECT }}
+          LAT: ${{ vars.LAT }}
+          LON: ${{ vars.LON }}
+          RAIN_THRESHOLD: ${{ vars.RAIN_THRESHOLD }}
+          SLOT: ${{ steps.slot.outputs.slot }}
+          MANUAL_TITLE: ${{ github.event.inputs.title }}
+          MANUAL_MESSAGE: ${{ github.event.inputs.message }}
+        run: |
+          if [ -n "$MANUAL_MESSAGE" ]; then
+            node scripts/send.mjs "$MANUAL_TITLE" "$MANUAL_MESSAGE" "$SLOT"
+          else
+            node scripts/rain-check.mjs --slot="$SLOT"
+          fi
+
+      - name: 失効した購読の削除をコミット
+        run: |
+          if ! git diff --quiet subscriptions.json; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git commit -m "chore: 失効した購読を削除" subscriptions.json
+            git push
+          fi

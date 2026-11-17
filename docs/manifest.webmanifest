@@ -1,0 +1,16 @@
+{
+  "name": "ameyaka — 傘を、忘れない。",
+  "short_name": "ameyaka",
+  "description": "雨の日の朝だけ、傘を持つよう知らせてくれるアプリ。",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#eef3f3",
+  "theme_color": "#2f6f7c",
+  "lang": "ja",
+  "icons": [
+    { "src": "./icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "./icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
