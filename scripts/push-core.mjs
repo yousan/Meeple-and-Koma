@@ -4,6 +4,13 @@ import { readFileSync, writeFileSync, existsSync } from "node:fs";
 const SUBS_PATH = new URL("../subscriptions.json", import.meta.url);
 
 export function loadSubscriptions() {
+  // 公開リポジトリに端末の購読情報を置きたくない場合は、
+  // Actions Secret の SUBSCRIPTIONS_JSON に配列をそのまま入れる（あればこちらを優先）。
+  const fromEnv = process.env.SUBSCRIPTIONS_JSON;
+  if (fromEnv && fromEnv.trim()) {
+    const list = JSON.parse(fromEnv);
+    return Array.isArray(list) ? list : [];
+  }
   if (!existsSync(SUBS_PATH)) return [];
   const list = JSON.parse(readFileSync(SUBS_PATH, "utf8"));
   return Array.isArray(list) ? list : [];
@@ -59,7 +66,10 @@ export async function send(payloadFor) {
   }
 
   const removed = subs.length - alive.length;
-  if (removed > 0) writeFileSync(SUBS_PATH, JSON.stringify(alive, null, 2) + "\n");
+  // Secret 運用のときはファイルを書き換えない（書いても反映されないため）
+  if (removed > 0 && !process.env.SUBSCRIPTIONS_JSON) {
+    writeFileSync(SUBS_PATH, JSON.stringify(alive, null, 2) + "\n");
+  }
   console.log(`送信 ${sent} / スキップ ${skipped} / 削除 ${removed}（登録 ${subs.length}）`);
   return { sent, skipped, removed };
 }

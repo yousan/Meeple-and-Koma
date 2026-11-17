@@ -55,6 +55,7 @@ jobs:
           LON: ${{ vars.LON }}
           RAIN_THRESHOLD: ${{ vars.RAIN_THRESHOLD }}
           SLOT: ${{ steps.slot.outputs.slot }}
+          SUBSCRIPTIONS_JSON: ${{ secrets.SUBSCRIPTIONS_JSON }}
           MANUAL_TITLE: ${{ github.event.inputs.title }}
           MANUAL_MESSAGE: ${{ github.event.inputs.message }}
         run: |

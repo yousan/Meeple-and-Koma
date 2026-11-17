@@ -73,6 +73,19 @@ npm run serve                             # http://localhost:8080
 GitHub の Actions → 「雨チェックと通知」→ Run workflow でも発火できる
 （`message` を入れるとその本文、空なら天気判定。`slot` で朝/夕を選ぶ）。
 
+## 購読情報を公開したくないとき
+
+このリポジトリは public なので、`subscriptions.json` に入れると端末の endpoint が誰でも読める。
+実際に通知を送るには VAPID 秘密鍵で署名する必要があるため「勝手に通知を送られる」ことはないが、
+端末を一意に識別できる文字列ではある。
+
+気になる場合は、Actions Secret に **`SUBSCRIPTIONS_JSON`** として配列をそのまま入れる。
+設定されていればファイルより優先され、`subscriptions.json` は空配列 `[]` のままでよい。
+
+```json
+[{ "endpoint": "https://web.push.apple.com/...", "keys": { "p256dh": "...", "auth": "..." } }]
+```
+
 ## iOS の注意
 
 - iOS 16.4 以降、**ホーム画面に追加した PWA からのみ** Web Push を受け取れる。
