@@ -49,6 +49,7 @@ const PAGES = [
 /* ---------- 状態 ---------- */
 const LS = "ameyaka.settings";
 const LS_TAG = "ameyaka.tagstate";
+const LS_DEMO = "ameyaka.demo";
 
 let settings = { ...DEFAULTS, ...safeParse(localStorage.getItem(LS)) };
 let weather = null;
@@ -60,6 +61,26 @@ function safeParse(s) { try { return JSON.parse(s) || {}; } catch { return {}; }
 function saveSettings() { localStorage.setItem(LS, JSON.stringify(settings)); }
 function place() { return PLACES[settings.place] || PLACES.shibuya; }
 
+// デモ用の天気固定。撮影・発表で当日の天気に左右されないようにする。
+// URL に ?demo=rain / sunny / live を付けても切り替わる。
+const DEMO_PRESETS = {
+  live: null,
+  rain: { label: "雨予報", max: 70, temp: 18.4, firstHour: 15 },
+  heavy: { label: "大雨", max: 90, temp: 14.2, firstHour: 9 },
+  sunny: { label: "晴れ", max: 10, temp: 22.0, firstHour: null },
+};
+
+function demoMode() {
+  const q = new URLSearchParams(location.search).get("demo");
+  if (q && q in DEMO_PRESETS) localStorage.setItem(LS_DEMO, q);
+  const saved = localStorage.getItem(LS_DEMO);
+  return saved && saved in DEMO_PRESETS ? saved : "live";
+}
+
+function setDemoMode(mode) {
+  localStorage.setItem(LS_DEMO, mode);
+}
+
 function tagState() {
   return { present: true, battery: 82, spot: "玄関", ...safeParse(localStorage.getItem(LS_TAG)) };
 }
@@ -68,6 +89,27 @@ function saveTagState(s) { localStorage.setItem(LS_TAG, JSON.stringify(s)); }
 /* ---------- 天気 ---------- */
 async function loadWeather() {
   const p = place();
+  const preset = DEMO_PRESETS[demoMode()];
+  if (preset) {
+    const hours = Array.from({ length: 24 }, (_, hour) => ({
+      hour,
+      prob: preset.firstHour === null ? preset.max : hour >= preset.firstHour ? preset.max : Math.max(0, preset.max - 50),
+    }));
+    weather = {
+      temp: preset.temp,
+      max: preset.max,
+      summary:
+        preset.max < settings.threshold ? "一日を通して晴れ"
+        : preset.firstHour !== null && preset.firstHour >= 12 ? "午後から雨"
+        : "午前中から雨",
+      firstHour: preset.max >= settings.threshold ? preset.firstHour : null,
+      hours,
+      updatedAt: new Date(),
+      mocked: true,
+    };
+    return weather;
+  }
+
   const url =
     "https://api.open-meteo.com/v1/forecast" +
     `?latitude=${p.lat}&longitude=${p.lon}` +
@@ -184,6 +226,7 @@ function viewHome() {
       right: '<div class="avatar">A</div>',
     }) +
     `<div class="content">
+      ${w && w.mocked ? `<div class="notice">${SVG.info}<span>天気は<b>デモ値（${DEMO_PRESETS[demoMode()].label}）</b>です。傘の状態はモックです。通知の配信は実装済みです。</span></div>` : ""}
       <section class="hero">
         <div class="place">${SVG.pin}<span>${p.name}</span></div>
         <div class="updated">${w ? hhmm(w.updatedAt) + " 更新" : ""}</div>
@@ -291,6 +334,19 @@ function viewSettings() {
 
       <button class="btn" id="save">${SVG.save}<span>この内容で保存</span></button>
 
+      <div class="section-label">DEMO</div>
+      <section class="card">
+        <div class="section-title">デモ用の天気</div>
+        <div class="s" style="font-size:.74rem;color:var(--muted);margin:4px 0 12px">
+          撮影や発表で当日の天気に左右されないための切替。デモ値のときはホームにその旨を表示します。
+        </div>
+        <div class="tabs" id="demoTabs">
+          ${Object.entries(DEMO_PRESETS).map(([k, v]) =>
+            `<button class="tab ${k === demoMode() ? "active" : ""}" data-demo="${k}">${v ? v.label + " " + v.max + "%" : "実天気API"}</button>`
+          ).join("")}
+        </div>
+      </section>
+
       <div class="section-label">PUSH</div>
       <section class="card">
         <div class="section-title" style="margin-bottom:10px">プッシュ通知</div>
@@ -354,6 +410,14 @@ function bindSettings() {
     refreshSubJson();
     setTimeout(() => { btn.innerHTML = SVG.save + "<span>この内容で保存</span>"; }, 1600);
   });
+
+  main.querySelectorAll("#demoTabs .tab").forEach((t) =>
+    t.addEventListener("click", async () => {
+      setDemoMode(t.dataset.demo);
+      try { await loadWeather(); } catch {}
+      render();
+    })
+  );
 
   document.getElementById("pushBtn").addEventListener("click", togglePush);
   document.getElementById("testBtn").addEventListener("click", testNotification);
@@ -575,6 +639,12 @@ function render() {
 async function boot() {
   render();
 
+  // 天気の読み込みを Service Worker の準備待ちの後ろにしない（初回表示がその分遅くなるため）
+  const weatherReady = loadWeather().then(
+    () => render(),
+    (e) => console.warn("天気取得失敗", e)
+  );
+
   if ("serviceWorker" in navigator) {
     try {
       registration = await navigator.serviceWorker.register("./sw.js");
@@ -588,7 +658,7 @@ async function boot() {
     }
   }
 
-  try { await loadWeather(); } catch (e) { console.warn("天気取得失敗", e); }
+  await weatherReady;
   render();
 }
 

@@ -13,6 +13,12 @@ const arg = (name, fallback) => {
 
 const SLOT = arg("slot", process.env.SLOT || "morning"); // morning | evening
 const DRY_RUN = process.argv.includes("--dry-run");
+// デモ用: 天気 API を呼ばずに降水確率を固定する（--mock-prob=70）。
+// 自動配信の経路はそのまま通したいが、当日の天気に左右されたくないとき用。
+const MOCK_PROB = (() => {
+  const v = arg("mock-prob", process.env.MOCK_PROB);
+  return v === undefined || v === "" ? null : Number(v);
+})();
 
 const FALLBACK = {
   lat: Number(process.env.LAT || 35.6617),
@@ -44,6 +50,20 @@ async function fetchJsonWithRetry(url, tries = 5) {
 async function forecast(lat, lon) {
   const key = `${lat},${lon}`;
   if (cache.has(key)) return cache.get(key);
+
+  if (MOCK_PROB !== null) {
+    // 12時から降り始める想定の固定データ
+    const hours = Array.from({ length: 24 }, (_, hour) => ({
+      hour,
+      prob: hour >= 12 ? MOCK_PROB : Math.max(0, MOCK_PROB - 40),
+    }));
+    const mock = {
+      max: MOCK_PROB, tmax: 18, date: new Date().toISOString().slice(0, 10),
+      hours, evening: MOCK_PROB, mocked: true,
+    };
+    cache.set(key, mock);
+    return mock;
+  }
 
   const url =
     "https://api.open-meteo.com/v1/forecast" +
@@ -119,7 +139,7 @@ const result = await send(async (sub) => {
 
   const place = s.place || FALLBACK.place;
   console.log(
-    `  ${place} (${lat},${lon}) ${w.date} 日中最大 ${w.max}% / 夕方以降 ${w.evening}% / 最高 ${w.tmax}℃ ・しきい値 ${threshold}%`
+    `  ${w.mocked ? "[デモ値] " : ""}${place} (${lat},${lon}) ${w.date} 日中最大 ${w.max}% / 夕方以降 ${w.evening}% / 最高 ${w.tmax}℃ ・しきい値 ${threshold}%`
   );
 
   const payload = compose(SLOT, w, threshold, s.umbrellaLocation);

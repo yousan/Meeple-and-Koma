@@ -199,6 +199,14 @@ input[type="range"] { width: 100%; accent-color: var(--teal); margin: 14px 0 4px
 .stat .v { font-size: .88rem; font-weight: 700; margin-top: 2px; }
 .foot-note { font-size: .66rem; color: var(--muted); text-align: center; }
 
+/* デモ値の注意書き */
+.notice {
+  display: flex; align-items: flex-start; gap: 9px;
+  background: #fdf3e7; color: #8a5a28; border: 1px solid #f3e0c6;
+  border-radius: 13px; padding: 12px 14px; font-size: .76rem; line-height: 1.6;
+}
+.notice svg { width: 16px; height: 16px; flex: 0 0 16px; margin-top: 2px; }
+
 .empty { text-align: center; color: var(--muted); font-size: .8rem; padding: 26px 10px; }
 .mock { font-size: .64rem; color: #b07b4a; background: #fdf3e7; border-radius: 8px; padding: 7px 10px; display: inline-block; }
 
