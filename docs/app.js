@@ -371,7 +371,7 @@ function viewGate() {
 }
 
 /* 解除した瞬間の「実績解除」演出。ホームの上に重ねて出し、数秒で消える */
-const TROPHY = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4h8v5a4 4 0 0 1-8 0z"/><path d="M8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4"/><path d="M12 13v3M9 20h6M10 16h4v4h-4z"/></svg>';
+const GOLD_UMBRELLA = '<svg viewBox="0 0 64 64" fill="none"><path d="M32 6v4" stroke="#7a5200" stroke-width="3" stroke-linecap="round"/><path d="M6 32C6 18 18 9 32 9s26 9 26 23c-3.6-2.6-7.6-2.6-11 0-3.4-2.6-8.6-2.6-12 0h-2c-3.4-2.6-8.6-2.6-12 0-3.4-2.6-7.4-2.6-11 0z" fill="url(#ug)" stroke="#a87512" stroke-width="1.6" stroke-linejoin="round"/><path d="M32 9c-6 5-8 13-8 23M32 9c6 5 8 13 8 23" stroke="#c99325" stroke-width="1.3" opacity=".8"/><path d="M32 32v18a6 6 0 0 1-12 0" stroke="#7a5200" stroke-width="3.2" stroke-linecap="round"/><defs><linearGradient id="ug" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff3c4"/><stop offset=".45" stop-color="#f6c945"/><stop offset="1" stop-color="#d49a16"/></linearGradient></defs></svg>';
 
 function showAchievement() {
   document.querySelector(".achv")?.remove();
@@ -390,8 +390,8 @@ function showAchievement() {
     <div class="achv-confetti">${bits}</div>
     <div class="achv-card" role="status" aria-live="polite">
       <div class="achv-shine"></div>
-      <div class="achv-label">🏆 実績解除</div>
-      <div class="achv-medal">${TROPHY}</div>
+      <div class="achv-label">✨ 実績解除</div>
+      <div class="achv-medal"><div class="achv-umb">${GOLD_UMBRELLA}</div></div>
       <div class="achv-title">傘を持ちましたね！</div>
       <div class="achv-sub">今日の雨も、これで安心。いってらっしゃい！</div>
       ${streak >= 2 ? `<div class="achv-streak">☔ 雨の日チェック ${streak}日連続</div>` : ""}

@@ -1,7 +1,7 @@
 // ameyaka Service Worker: push を受けて通知を出し、履歴に残す。
 importScripts("./store.js");
 
-const CACHE = "ameyaka-v6";
+const CACHE = "ameyaka-v7";
 const ASSETS = [
   "./", "./index.html", "./styles.css", "./app.js", "./store.js", "./config.js",
   "./manifest.webmanifest", "./icons/icon-192.png",
