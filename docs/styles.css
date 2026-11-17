@@ -279,3 +279,7 @@ textarea {
 }
 .card.checked .icon { color: #35774f; background: #e4f2e8; }
 .btn.mini { width: auto; padding: 8px 13px; font-size: .74rem; border-radius: 10px; }
+.gate-stage.unlocked { background: linear-gradient(160deg, #3f8f63, #2f7a52); padding: 60px 20px 54px; }
+.gate-ring.done { animation: none; background: rgba(255,255,255,.18); }
+.gate-ring.done .gate-icon { color: #2f7a52; animation: gate-pop .45s ease-out; }
+@keyframes gate-pop { 0% { transform: scale(.4); } 70% { transform: scale(1.12); } 100% { transform: scale(1); } }

@@ -91,6 +91,7 @@ function saveTagState(s) { localStorage.setItem(LS_TAG, JSON.stringify(s)); }
    タグには ?tag=umbrella 付きの URL を書き込んでおき、かざすとその URL が開いて解除される。
    デモではボタンで代用する（画面に「デモ」と明記）。 */
 const LS_CHECK = "ameyaka.umbrellaCheck";
+let justUnlocked = false;
 
 function todayKey() {
   const d = new Date();
@@ -110,7 +111,12 @@ function gateActive() { return settings.reinforce && needsUmbrella() && !umbrell
 function consumeUrlParams() {
   const q = new URLSearchParams(location.search);
   let changed = false;
-  if (q.has("tag")) { markUmbrellaChecked("tag"); q.delete("tag"); changed = true; }
+  if (q.has("tag")) {
+    const wasLocked = !umbrellaCheck();
+    markUmbrellaChecked("tag");
+    if (wasLocked) justUnlocked = true;
+    q.delete("tag"); changed = true;
+  }
   if (q.get("gate") === "reset") { resetUmbrellaCheck(); q.delete("gate"); changed = true; }
   if (changed) {
     const qs = q.toString();
@@ -342,8 +348,21 @@ function viewGate() {
 
   document.getElementById("gateDemo").addEventListener("click", () => {
     markUmbrellaChecked("demo");
+    justUnlocked = true;
     render();
   });
+}
+
+/* 解除した瞬間の「いってらっしゃい」画面。少し見せてからホームへ */
+function viewUnlocked() {
+  main.innerHTML = head({ eyebrow: "雨の日チェック", title: "確認できました", lead: "傘のタグを読み取りました。" }) + `<div class="content">
+    <section class="gate-stage unlocked">
+      <div class="gate-ring done"><div class="gate-icon">${SVG.save}</div></div>
+      <div class="gate-title">傘を持ちました</div>
+      <div class="gate-sub"><span>いってらっしゃい！</span></div>
+    </section>
+  </div>`;
+  setTimeout(() => { justUnlocked = false; render(); }, 1800);
 }
 
 /* ---- 設定 ---- */
@@ -700,10 +719,10 @@ const views = { home: viewHome, settings: viewSettings, history: viewHistory, ta
 
 function render() {
   const gated = gateActive();
-  document.body.classList.toggle("gated", gated);
+  document.body.classList.toggle("gated", gated || justUnlocked);
   renderNav();
   renderChip();
-  (gated ? viewGate : views[currentPage()])();
+  (justUnlocked ? viewUnlocked : gated ? viewGate : views[currentPage()])();
   document.getElementById("gateReset")?.addEventListener("click", () => {
     resetUmbrellaCheck();
     render();
@@ -734,8 +753,21 @@ async function boot() {
   }
 
   await weatherReady;
+  wasGated = gateActive();
   render();
 }
 
 window.addEventListener("hashchange", render);
+
+// タグの URL が別タブで開いても、ロック中のタブがすぐ解除されるようにする
+let wasGated = false;
+function syncGate() {
+  const now = weather ? gateActive() : false;
+  if (wasGated && !now && !justUnlocked) justUnlocked = true;
+  wasGated = now;
+  render();
+}
+window.addEventListener("storage", (e) => { if (e.key === LS_CHECK) syncGate(); });
+document.addEventListener("visibilitychange", () => { if (!document.hidden) syncGate(); });
+setInterval(() => { if (document.body.classList.contains("gated") && !justUnlocked && !gateActive()) syncGate(); }, 1500);
 boot();
