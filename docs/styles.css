@@ -256,3 +256,26 @@ textarea {
   .hero .temp { font-size: 2.6rem; }
   .history { padding: 4px 16px; }
 }
+
+/* 雨の日チェック：傘を持つまで先に進めない */
+.gated .nav { display: none; }
+.gate-stage {
+  background: linear-gradient(160deg, #2f6f7c, #1f5b69); color: #fff;
+  border-radius: var(--radius); padding: 34px 20px 30px; text-align: center;
+}
+.gate-ring {
+  width: 132px; height: 132px; margin: 0 auto 22px; border-radius: 50%;
+  display: grid; place-items: center; background: rgba(255,255,255,.12);
+  animation: gate-pulse 1.8s ease-out infinite;
+}
+.gate-icon { width: 84px; height: 84px; border-radius: 50%; background: #fff; color: var(--teal-deep); display: grid; place-items: center; }
+.gate-icon svg { width: 44px; height: 44px; }
+.gate-title { font-size: 1.3rem; font-weight: 800; line-height: 1.5; }
+.gate-sub { display: inline-flex; align-items: center; gap: 7px; margin-top: 12px; font-size: .78rem; opacity: .85; }
+.gate-sub svg { width: 16px; height: 16px; }
+@keyframes gate-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(255,255,255,.35); }
+  100% { box-shadow: 0 0 0 26px rgba(255,255,255,0); }
+}
+.card.checked .icon { color: #35774f; background: #e4f2e8; }
+.btn.mini { width: auto; padding: 8px 13px; font-size: .74rem; border-radius: 10px; }
