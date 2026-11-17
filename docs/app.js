@@ -101,8 +101,25 @@ function umbrellaCheck() {
   const c = safeParse(localStorage.getItem(LS_CHECK));
   return c.day === todayKey() ? c : null;
 }
+const LS_DAYS = "ameyaka.checkedDays";
 function markUmbrellaChecked(via) {
   localStorage.setItem(LS_CHECK, JSON.stringify({ day: todayKey(), at: Date.now(), via }));
+  const days = new Set(safeArray(localStorage.getItem(LS_DAYS)));
+  days.add(todayKey());
+  localStorage.setItem(LS_DAYS, JSON.stringify([...days].slice(-60)));
+}
+function safeArray(s) { try { const v = JSON.parse(s); return Array.isArray(v) ? v : []; } catch { return []; } }
+// 今日から遡って、雨の日チェックを続けた日数（チェックの無い日で途切れる）
+function checkStreak() {
+  const days = new Set(safeArray(localStorage.getItem(LS_DAYS)));
+  let n = 0;
+  const d = new Date();
+  for (;;) {
+    const k = `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+    if (!days.has(k)) break;
+    n++; d.setDate(d.getDate() - 1);
+  }
+  return n;
 }
 function resetUmbrellaCheck() { localStorage.removeItem(LS_CHECK); }
 function gateActive() { return settings.reinforce && needsUmbrella() && !umbrellaCheck(); }
@@ -334,12 +351,12 @@ function viewGate() {
     head({
       eyebrow: "雨の日チェック",
       title: "傘を持ちましたか？",
-      lead: `今日の降水確率は${w.max}%。傘のタグにスマホをかざすまで、アプリは先に進めません。`,
+      lead: `今日の降水確率は${w.max}%。傘のNFCタグをかざしてURLを開くまで、アプリは先に進めません。`,
     }) +
     `<div class="content">
       <section class="gate-stage">
         <div class="gate-ring"><div class="gate-icon">${SVG.umbrella}</div></div>
-        <div class="gate-title">傘のタグに<br>スマホをかざしてください</div>
+        <div class="gate-title">傘のNFCタグをかざして<br>URLを開いてください</div>
         <div class="gate-sub">${SVG.cloudRain}<span>${w.firstHour !== null ? `${w.firstHour}時ごろから雨の予報です` : "雨の予報です"}</span></div>
       </section>
       <button class="btn ghost" id="gateDemo">${SVG.save}<span>タグをかざした（デモ）</span></button>
@@ -353,16 +370,41 @@ function viewGate() {
   });
 }
 
-/* 解除した瞬間の「いってらっしゃい」画面。少し見せてからホームへ */
-function viewUnlocked() {
-  main.innerHTML = head({ eyebrow: "雨の日チェック", title: "確認できました", lead: "傘のタグを読み取りました。" }) + `<div class="content">
-    <section class="gate-stage unlocked">
-      <div class="gate-ring done"><div class="gate-icon">${SVG.save}</div></div>
-      <div class="gate-title">傘を持ちました</div>
-      <div class="gate-sub"><span>いってらっしゃい！</span></div>
-    </section>
-  </div>`;
-  setTimeout(() => { justUnlocked = false; render(); }, 1800);
+/* 解除した瞬間の「実績解除」演出。ホームの上に重ねて出し、数秒で消える */
+const TROPHY = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4h8v5a4 4 0 0 1-8 0z"/><path d="M8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4"/><path d="M12 13v3M9 20h6M10 16h4v4h-4z"/></svg>';
+
+function showAchievement() {
+  document.querySelector(".achv")?.remove();
+  const streak = checkStreak();
+  const colors = ["#f6c945", "#ffffff", "#7fd1c7", "#e08b4a", "#a7c7ff"];
+  const bits = Array.from({ length: 26 }, (_, i) => {
+    const left = Math.round(Math.random() * 100);
+    const delay = (Math.random() * 0.5).toFixed(2);
+    const dur = (1.6 + Math.random() * 1.2).toFixed(2);
+    const rot = Math.round(Math.random() * 360);
+    return `<i style="left:${left}%;background:${colors[i % colors.length]};animation-delay:${delay}s;animation-duration:${dur}s;transform:rotate(${rot}deg)"></i>`;
+  }).join("");
+  const el = document.createElement("div");
+  el.className = "achv";
+  el.innerHTML = `
+    <div class="achv-confetti">${bits}</div>
+    <div class="achv-card" role="status" aria-live="polite">
+      <div class="achv-shine"></div>
+      <div class="achv-label">🏆 実績解除</div>
+      <div class="achv-medal">${TROPHY}</div>
+      <div class="achv-title">傘を持ちましたね！</div>
+      <div class="achv-sub">今日の雨も、これで安心。いってらっしゃい！</div>
+      ${streak >= 2 ? `<div class="achv-streak">☔ 雨の日チェック ${streak}日連続</div>` : ""}
+      <div class="achv-tap">タップで閉じる</div>
+    </div>`;
+  const close = () => {
+    el.classList.add("out");
+    setTimeout(() => el.remove(), 350);
+  };
+  el.addEventListener("click", close);
+  document.body.appendChild(el);
+  navigator.vibrate?.([30, 60, 30]);
+  setTimeout(close, 4200);
 }
 
 /* ---- 設定 ---- */
@@ -719,10 +761,11 @@ const views = { home: viewHome, settings: viewSettings, history: viewHistory, ta
 
 function render() {
   const gated = gateActive();
-  document.body.classList.toggle("gated", gated || justUnlocked);
+  document.body.classList.toggle("gated", gated);
   renderNav();
   renderChip();
-  (justUnlocked ? viewUnlocked : gated ? viewGate : views[currentPage()])();
+  (gated ? viewGate : views[currentPage()])();
+  if (justUnlocked) { justUnlocked = false; showAchievement(); }
   document.getElementById("gateReset")?.addEventListener("click", () => {
     resetUmbrellaCheck();
     render();
