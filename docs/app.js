@@ -741,7 +741,16 @@ async function boot() {
 
   if ("serviceWorker" in navigator) {
     try {
-      registration = await navigator.serviceWorker.register("./sw.js");
+      // 新しい版の Service Worker に切り替わったら、一度だけ読み直して最新の画面にする
+      const hadController = !!navigator.serviceWorker.controller;
+      navigator.serviceWorker.addEventListener("controllerchange", () => {
+        if (hadController && !sessionStorage.getItem("ameyaka.reloaded")) {
+          sessionStorage.setItem("ameyaka.reloaded", "1");
+          location.reload();
+        }
+      });
+      registration = await navigator.serviceWorker.register("./sw.js", { updateViaCache: "none" });
+      registration.update().catch(() => {});
       await navigator.serviceWorker.ready;
       subscription = await registration.pushManager.getSubscription();
       navigator.serviceWorker.addEventListener("message", (e) => {
@@ -768,6 +777,10 @@ function syncGate() {
   render();
 }
 window.addEventListener("storage", (e) => { if (e.key === LS_CHECK) syncGate(); });
-document.addEventListener("visibilitychange", () => { if (!document.hidden) syncGate(); });
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) return;
+  registration?.update().catch(() => {});
+  syncGate();
+});
 setInterval(() => { if (document.body.classList.contains("gated") && !justUnlocked && !gateActive()) syncGate(); }, 1500);
 boot();

@@ -1,7 +1,7 @@
 // ameyaka Service Worker: push を受けて通知を出し、履歴に残す。
 importScripts("./store.js");
 
-const CACHE = "ameyaka-v4";
+const CACHE = "ameyaka-v5";
 const ASSETS = [
   "./", "./index.html", "./styles.css", "./app.js", "./store.js", "./config.js",
   "./manifest.webmanifest", "./icons/icon-192.png",
@@ -26,7 +26,8 @@ self.addEventListener("fetch", (event) => {
   // 天気 API はキャッシュに落とさない
   if (url.origin !== self.location.origin) return;
   event.respondWith(
-    fetch(event.request).catch(() =>
+    // HTTP キャッシュ（Pages は10分）を使わず、毎回サーバーに更新を確かめる。古い画面が残らないように
+    fetch(event.request, { cache: "no-cache" }).catch(() =>
       caches.match(event.request).then((r) => r || caches.match("./index.html"))
     )
   );
