@@ -37,6 +37,7 @@ const DEFAULTS = {
   departAt: "08:30",
   returnAt: "18:30",
   leadMinutes: 30,
+  nagMinutes: 1, // 再通知の間隔（分）。タグをかざすまで、この間隔で通知が続く
 };
 
 const PAGES = [
@@ -107,6 +108,36 @@ function markUmbrellaChecked(via) {
   const days = new Set(safeArray(localStorage.getItem(LS_DAYS)));
   days.add(todayKey());
   localStorage.setItem(LS_DAYS, JSON.stringify([...days].slice(-60)));
+  stopNagging();
+}
+
+/* ---------- 再通知サーバー（config.js の AMEYAKA_SERVER）----------
+   雨の日は、タグをかざすまで設定した間隔で通知が続く。止めた状態はサーバー1か所で持つ。
+   タグの URL は iPhone だと Safari で開くことがあり、その時は購読が手元に無いので、全端末を止める。 */
+function serverPost(path, body) {
+  const base = window.AMEYAKA_SERVER;
+  if (!base) return Promise.resolve(null);
+  return fetch(base.replace(/\/$/, "") + path, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(body || {}),
+    keepalive: true,
+  }).then((r) => r.json()).catch((e) => { console.warn("server", path, e); return null; });
+}
+function registerWithServer() {
+  if (!subscription) return Promise.resolve(null);
+  const p = place();
+  return serverPost("/subscribe", {
+    subscription: subscription.toJSON(),
+    settings: { intervalMin: Number(settings.nagMinutes) || 1, threshold: settings.threshold, lat: p.lat, lon: p.lon },
+  });
+}
+function stopNagging() {
+  return serverPost("/stop", subscription ? { endpoint: subscription.endpoint } : {});
+}
+function startNagging() {
+  if (!subscription) return Promise.resolve(null);
+  return registerWithServer().then(() => serverPost("/start", { endpoint: subscription.endpoint }));
 }
 function safeArray(s) { try { const v = JSON.parse(s); return Array.isArray(v) ? v : []; } catch { return []; } }
 // 今日から遡って、雨の日チェックを続けた日数（チェックの無い日で途切れる）
@@ -463,6 +494,21 @@ function viewSettings() {
 
       <button class="btn" id="save">${SVG.save}<span>この内容で保存</span></button>
 
+      <div class="section-label">REMIND</div>
+      <section class="card">
+        <div class="section-title">傘をかざすまで、通知を続ける</div>
+        <div class="s" style="font-size:.74rem;color:var(--muted);margin:4px 0 12px">
+          雨の日は、傘のタグをかざすまで、この間隔で通知が届き続けます。
+        </div>
+        <div class="tabs" id="nagTabs">
+          ${[1, 5, 10].map((m) =>
+            `<button class="tab ${Number(settings.nagMinutes) === m ? "active" : ""}" data-min="${m}">${m}分おき</button>`
+          ).join("")}
+        </div>
+        <button class="btn ghost" id="nagStart" style="margin-top:12px" ${enabled ? "" : "disabled"}>${SVG.send}<span>今から再通知を始める（テスト）</span></button>
+        <div class="statusline" id="nagStatus" style="margin-top:6px">${enabled ? "" : "先に下の「通知を有効にする」を押してください。"}</div>
+      </section>
+
       <div class="section-label">DEMO</div>
       <section class="card">
         <div class="section-title">デモ用の天気</div>
@@ -547,6 +593,23 @@ function bindSettings() {
       render();
     })
   );
+
+  main.querySelectorAll("#nagTabs .tab").forEach((t) =>
+    t.addEventListener("click", () => {
+      settings.nagMinutes = Number(t.dataset.min);
+      saveSettings();
+      main.querySelectorAll("#nagTabs .tab").forEach((x) => x.classList.toggle("active", x === t));
+      registerWithServer();
+    })
+  );
+  document.getElementById("nagStart")?.addEventListener("click", async () => {
+    const el = document.getElementById("nagStatus");
+    el.textContent = "送信中…";
+    const r = await startNagging();
+    el.textContent = r?.ok
+      ? `${settings.nagMinutes}分おきに通知が届きます。傘のタグをかざすと止まります。`
+      : "サーバーに届きませんでした。通信を確認してください。";
+  });
 
   document.getElementById("pushBtn").addEventListener("click", togglePush);
   document.getElementById("testBtn").addEventListener("click", testNotification);
@@ -736,6 +799,7 @@ async function togglePush() {
       userVisibleOnly: true,
       applicationServerKey: urlBase64ToUint8Array(key),
     });
+    registerWithServer();
     render();
   } catch (e) {
     const el = document.getElementById("pushStatus");
@@ -796,6 +860,7 @@ async function boot() {
       registration.update().catch(() => {});
       await navigator.serviceWorker.ready;
       subscription = await registration.pushManager.getSubscription();
+      registerWithServer();
       navigator.serviceWorker.addEventListener("message", (e) => {
         if (e.data?.type === "push-received" && currentPage() === "history") viewHistory();
       });
