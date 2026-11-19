@@ -100,7 +100,7 @@
 | F7 | **NFC タグで解除**: タグに書いた URL（`?tag=umbrella`）を開くと解除 | ✅ iPhone＋NTAG216 で確認 | `docs/app.js` `consumeUrlParams()` `markUmbrellaChecked()` |
 | F8 | **実績解除の演出**: 揺れる金色の傘・紙吹雪・振動・「雨の日チェック N日連続」 | ✅ | `docs/app.js` `showAchievement()` `checkStreak()`、`docs/styles.css` |
 | F9 | **再通知（連打）**: タグをかざすまで 1・5・10 分おきに通知が積み上がる。1日30通で打ち止め | ✅ 1分おきに届くのを実機で確認 | `server/ameyaka-push.mjs` `tick()` |
-| F10 | **タグで再通知が止まる** | 🟡 実機で一度成功、日付の切り替わりと重なったため撮影時に再確認予定 | `docs/app.js` `stopNagging()` → サーバー `POST /stop` |
+| F10 | **タグで再通知が止まる** | ✅ iPhone 実機で確認（11/19 17:10） | `docs/app.js` `stopNagging()` → サーバー `POST /stop` |
 | F11 | 毎朝 7 時に雨予報なら再通知を自動開始 | ✅ 実装（自動開始の実地確認は雨の日待ち） | `server/ameyaka-push.mjs` `autoStart()` |
 | F12 | 通知履歴（種別で絞り込み） | ✅ | `docs/sw.js`（受信時に保存）、`docs/store.js`（IndexedDB）、`docs/app.js` `viewHistory()` |
 | F13 | 設定（通知枠3種・しきい値・地域5か所・出発/帰宅時刻・再通知の間隔・テスト通知） | ✅ | `docs/app.js` `viewSettings()` `bindSettings()` |
@@ -274,7 +274,7 @@ function gateActive() { return settings.reinforce && needsUmbrella() && !umbrell
 | 11/17 | 100% →「帰宅時間に雨の予報です」 | ✅ |
 | 11/17 | iPhone 実機で雨の日ロック → NFC タグにかざして解除 | ✅ |
 | 11/18 | 再通知が 1 分おきに間引かれず届く（iPhone 実機） | ✅ |
-| 11/19 | タグにかざして再通知が止まる | 🟡 一度成功。0 時直後で日付リセットと区別できないため撮影時に再確認 |
+| 11/19 17:06〜17:14 | 再通知を開始 → 1分おきに5通届く → 17:10 に孫の手タグにかざす → サーバーが停止を受信、以後は通知が来ない（再開・再停止もやり直して同じ結果） | ✅ |
 
 GitHub Actions の実行履歴: <https://github.com/yousan/Meeple-and-Koma/actions>
 
