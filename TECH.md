@@ -53,7 +53,7 @@ PC は左サイドバー、スマホは上部の横スクロールナビに畳�
 - **実装**: yousan が OpenClaw 上のアシスタント「じゅう」を通して Claude Code（Anthropic Opus 5）に書かせている。
   Discord のスレッドで指示 → じゅうがコードを書き、検証し、GitHub に push する、という流れ
 - **リポジトリ**: <https://github.com/yousan/Meeple-and-Koma>
-- **公開 URL**: <https://yousan.github.io/Meeple-and-Koma/>
+- **公開 URL**: <https://aizu-naranu.github.io/rain-push-pwa/>（このリポジトリの `docs/` と同じ中身）
 
 ## 動作実績（2026-11-13 〜 11-17）
 

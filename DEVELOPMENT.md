@@ -2,7 +2,7 @@
 
 雨の日の朝だけ「傘を持って」と知らせる PWA。UI はあめみやさんの Figma 設計に合わせています。
 
-公開URL: <https://yousan.github.io/Meeple-and-Koma/>
+公開URL: <https://aizu-naranu.github.io/rain-push-pwa/>（このリポジトリの `docs/` と同じ中身。詳しくは README）
 
 使用技術・開発体制・既知の弱点は [TECH.md](TECH.md) にまとめてあります。
 
